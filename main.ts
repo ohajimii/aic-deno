@@ -12,6 +12,10 @@ const CHAT_URL = Deno.env.get("CHAT_URL") ?? "https://x162-43-21-174.static.xvps
 const PHPSESSID = Deno.env.get("PHPSESSID") ?? ""; // 必须设置为部署机密
 const CACHE_KEY = ["cache_jwt"];
 const JWT_CACHE_TTL_SECONDS = 9 * 60; // 9 minutes
+const USER_AGENT =
+  "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36";
+const REFERER =
+  "https://beta.aiipo.jp/apmng/chat/llm_chat.php?chat_id=-1&p=0";
 
 // 可选模型列表（来自你给的例子）
 const AVAILABLE_MODELS = [
@@ -64,6 +68,8 @@ async function fetchJwtFromSource(): Promise<string> {
   if (PHPSESSID) {
     headers.set("Cookie", `PHPSESSID=${PHPSESSID}`);
   }
+  headers.set("User-Agent", USER_AGENT);
+  headers.set("Referer", REFERER);
   const resp = await fetch(JWT_URL, { method: "GET", headers });
   if (!resp.ok) {
     throw new Error(`get_jwt failed: ${resp.status} ${await resp.text()}`);
@@ -259,7 +265,8 @@ async function handleChatCompletions(req: Request) {
   headers.set("Content-Type", "application/json");
   headers.set("Authorization", `Bearer ${jwt}`);
   headers.set("Accept", "*/*");
-
+  headers.set("User-Agent", USER_AGENT);
+  headers.set("Referer", REFERER);
   // Forward other optional headers if needed
   // Send to source
   const srcResp = await fetch(CHAT_URL, {
