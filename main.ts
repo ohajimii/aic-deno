@@ -262,9 +262,9 @@ async function handleChatCompletions(req: Request, info: ServeHandlerInfo) {
     messages: srcMessages,
     query,
     conversation_id: body.conversation_id ?? "",
-    user: body.user ?? "web-user",
+    user:  "web-user",
     inputs,
-    response_mode: stream ? "streaming" : "non_streaming",
+    response_mode:  "streaming",
   };
   
   // --- Logging ---
@@ -272,10 +272,10 @@ async function handleChatCompletions(req: Request, info: ServeHandlerInfo) {
     try {
       const sampledBackendRequestBody = {
         ...srcBody,
-        query: sampleString(srcBody.query, 128),
+        query: sampleString(srcBody.query, 256),
         messages: srcBody.messages.map((msg: any) => ({
           role:msg.role,
-          content: sampleString(msg.content, 16),
+          content: sampleString(msg.content,32),
         })),
       };
 
