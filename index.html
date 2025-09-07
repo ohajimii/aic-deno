@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini AI Chat</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --primary-color: #007bff;
+            --user-msg-bg: #0056b3;
+            --assistant-msg-bg: #3a3a3a;
+            --input-bg: #2a2a2a;
+            --border-color: #444;
+            --hover-bg: #4f4f4f;
+        }
+        html {
+            height: 100%;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            height: 100%;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 260px;
+            background-color: #252526;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+        }
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn:hover {
+            background-color: var(--hover-bg);
+        }
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        .message {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            position: relative;
+            white-space: pre-wrap;
+        }
+        .message:hover .message-actions {
+            opacity: 1;
+        }
+        .user {
+            background-color: var(--user-msg-bg);
+            align-self: flex-end;
+        }
+        .assistant {
+            background-color: var(--assistant-msg-bg);
+            align-self: flex-start;
+        }
+        .message-actions {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            gap: 2px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            padding: 0;
+            border-radius: 0.5rem;
+            background-color: var(--assistant-msg-bg);
+        }
+        .user .message-actions {
+            background-color: var(--user-msg-bg);
+        }
+        .message-actions button {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0.2rem;
+        }
+        .form-container {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        #message-form {
+            display: flex;
+        }
+        #message-input {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+        #send-button {
+            margin-left: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        #send-button:disabled {
+            background-color: #555;
+        }
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        .menu-toggle {
+            display: none; /* Hidden by default */
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem 0.8rem;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        .sidebar-close-btn {
+            display: none; /* Hidden by default */
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                z-index: 1000;
+                border-right: 1px solid var(--border-color);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .menu-toggle, .sidebar-close-btn {
+                display: block;
+            }
+            .chat-container {
+                padding-top: 4rem;
+            }
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: var(--input-bg);
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            width: 80%;
+            max-width: 500px;
+            border-radius: 0.5rem;
+            color: var(--text-color);
+        }
+        .modal-content textarea {
+            width: 100%;
+            min-height: 150px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 10px;
+            font-size: 1rem;
+            resize: vertical;
+        }
+        .modal-actions {
+            margin-top: 1rem;
+            text-align: right;
+        }
+        .modal-actions button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            margin-left: 0.5rem;
+        }
+        .modal-actions .save-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .modal-actions .modal-cancel-btn {
+            background-color: var(--assistant-msg-bg);
+            color: var(--text-color);
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay"></div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <h3>Edit Message</h3>
+            <textarea id="edit-textarea"></textarea>
+            <div class="modal-actions">
+                <button id="cancel-edit-btn" class="modal-cancel-btn">Cancel</button>
+                <button id="save-edit-btn" class="save-btn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Models</h2>
+            <button class="sidebar-close-btn">&times;</button>
+        </div>
+        <div class="sidebar-content" id="models-list">
+            <!-- Models will be loaded here -->
+        </div>
+        <div class="sidebar-footer">
+            <button id="import-btn" class="btn">Import Chat</button>
+            <button id="export-btn" class="btn">Export Chat</button>
+            <input type="file" id="import-file" style="display: none;" accept=".json">
+        </div>
+    </div>
+
+    <div class="chat-main">
+        <button class="menu-toggle">â˜°</button>
+        <div class="chat-container" id="chat-container"></div>
+        <div class="form-container">
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+                <button type="submit" id="send-button">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('message-form');
+        const input = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const chatContainer = document.getElementById('chat-container');
+        const modelsList = document.getElementById('models-list');
+        const importBtn = document.getElementById('import-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const importFile = document.getElementById('import-file');
+        const sidebar = document.querySelector('.sidebar');
+        const menuToggle = document.querySelector('.menu-toggle');
+        const closeBtn = document.querySelector('.sidebar-close-btn');
+        const overlay = document.getElementById('overlay');
+        // Modal elements
+        const editModal = document.getElementById('edit-modal');
+        const editTeaxtarea = document.getElementById('edit-textarea');
+        const saveEditBtn = document.getElementById('save-edit-btn');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        let currentEditIndex = null;
+
+        // --- Mobile Sidebar Logic ---
+        const toggleSidebar = () => {
+            sidebar.classList.toggle('open');
+            overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+        };
+        menuToggle.addEventListener('click', toggleSidebar);
+        closeBtn.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+
+        let messages = [];
+
+        // --- Model Loading ---
+        async function loadModels() {
+            try {
+                const response = await fetch('/v1/models');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const { data } = await response.json();
+                
+                modelsList.innerHTML = data.map((model, index) => `
+                    <label style="display: block; margin-bottom: 0.5rem; cursor: pointer;">
+                        <input type="radio" name="model" value="${model.id}" ${index === 0 ? 'checked' : ''}>
+                        ${model.id}
+                    </label>
+                `).join('');
+            } catch (error) {
+                console.error("Failed to load models:", error);
+                modelsList.innerHTML = "<p>Could not load models.</p>";
+            }
+        }
+
+        // --- Chat Functionality ---
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userInput = input.value.trim();
+            if (!userInput) return;
+
+            const selectedModel = document.querySelector('input[name="model"]:checked')?.value;
+            if (!selectedModel) {
+                alert("Please select a model first.");
+                return;
+            }
+
+            addMessage({ role: 'user', content: userInput });
+            input.value = '';
+            sendButton.disabled = true;
+
+            const assistantMessage = { role: 'assistant', content: '' };
+            addMessage(assistantMessage, true); // Add placeholder for streaming
+
+            try {
+                const response = await fetch('/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: selectedModel,
+                        messages: messages.slice(0, -1), // Exclude the empty assistant message
+                        stream: true
+                    })
+                });
+
+                if (!response.ok) throw new Error(`API error! status: ${response.status}`);
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                const assistantMessageDiv = chatContainer.lastChild.querySelector('.content');
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.substring(6);
+                            if (data.trim() === '[DONE]') break;
+                            try {
+                                const { choices } = JSON.parse(data);
+                                const content = choices[0]?.delta?.content || '';
+                                if (content) {
+                                    assistantMessage.content += content;
+                                    assistantMessageDiv.textContent = assistantMessage.content;
+                                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                                }
+                            } catch (e) { console.error('Error parsing stream data:', e); }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch chat completion:", error);
+                assistantMessage.content = "Error: Could not get response.";
+                chatContainer.lastChild.querySelector('.content').textContent = assistantMessage.content;
+            } finally {
+                sendButton.disabled = false;
+                input.focus();
+            }
+        });
+
+        // --- Message Rendering and Actions ---
+        function addMessage(message, isStreaming = false) {
+            messages.push(message);
+            renderMessages();
+        }
+
+        function renderMessages() {
+            chatContainer.innerHTML = '';
+            messages.forEach((msg, index) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${msg.role}`;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'content';
+                contentDiv.textContent = msg.content;
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'message-actions';
+                actionsDiv.innerHTML = `
+                    <button onclick="editMessage(${index})">âœï¸</button>
+                    <button onclick="deleteMessage(${index})">ðŸ—‘ï¸</button>
+                `;
+
+                messageDiv.appendChild(contentDiv);
+                messageDiv.appendChild(actionsDiv);
+                chatContainer.appendChild(messageDiv);
+            });
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function closeEditModal() {
+            editModal.style.display = 'none';
+            currentEditIndex = null;
+        }
+
+        window.editMessage = (index) => {
+            currentEditIndex = index;
+            const message = messages[index];
+            editTeaxtarea.value = message.content;
+            editModal.style.display = 'block';
+            editTeaxtarea.focus();
+        };
+        
+        saveEditBtn.addEventListener('click', () => {
+            if (currentEditIndex === null) return;
+
+            const newContent = editTeaxtarea.value.trim();
+            if (newContent) {
+                messages[currentEditIndex].content = newContent;
+                renderMessages();
+            }
+            closeEditModal();
+        });
+
+        cancelEditBtn.addEventListener('click', closeEditModal);
+
+
+        window.deleteMessage = (index) => {
+            if (confirm("Are you sure you want to delete this message?")) {
+                messages.splice(index, 1);
+                renderMessages();
+            }
+        };
+
+        // --- Import/Export ---
+        exportBtn.addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(messages, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "chat_history.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        });
+
+        importBtn.addEventListener('click', () => importFile.click());
+
+        importFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedMessages = JSON.parse(e.target.result);
+                    if (Array.isArray(importedMessages)) {
+                        messages = importedMessages;
+                        renderMessages();
+                    } else {
+                        alert("Invalid chat format.");
+                    }
+                } catch (error) {
+                    alert("Error reading or parsing file.");
+                    console.error("Import error:", error);
+                }
+            };
+            reader.readAsText(file); // Reset for next import
+        });
+
+
+        // --- Initial Load ---
+        loadModels();
+    </script>
+
+</body>
+</html>
