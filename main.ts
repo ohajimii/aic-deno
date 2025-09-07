@@ -506,8 +506,6 @@ serve(async (req) => {
     return await handleChatCompletions(req);
   }
   // static
-  if (url.pathname === "/" || url.pathname.startsWith("/index.html")) {
-    return await handleStatic(req);
-  }
+
   return new Response("not found", { status: 404 });
 });
