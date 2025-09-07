@@ -12,6 +12,7 @@ const CHAT_URL = Deno.env.get("CHAT_URL") ?? "https://x162-43-21-174.static.xvps
 const PHPSESSID = Deno.env.get("PHPSESSID") ?? ""; // 必须设置为部署机密
 const LOG_SOURCE = Deno.env.get("LOG_SOURCE");
 const LOG_KEY = Deno.env.get("LOG_KEY");
+const IP_HEADER = Deno.env.get("IP_HEADER"); // Header for client IP, e.g., 'cf-connecting-ip'
 const CACHE_KEY = ["cache_jwt"];
 const JWT_CACHE_TTL_SECONDS = 9 * 60; // 9 minutes
 const USER_AGENT =
@@ -278,8 +279,11 @@ async function handleChatCompletions(req: Request, info: ServeHandlerInfo) {
         })),
       };
 
+      const ipHeaderValue = IP_HEADER ? req.headers.get(IP_HEADER) : null;
+      const clientIp = ipHeaderValue ?? info.remoteAddr.hostname;
+
       const logData = {
-        clientIp: info.remoteAddr.hostname,
+        clientIp,
         ua: req.headers.get("user-agent"),
         backendRequestBody: sampledBackendRequestBody,
       };
