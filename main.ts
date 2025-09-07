@@ -274,7 +274,7 @@ async function handleChatCompletions(req: Request, info: ServeHandlerInfo) {
         ...srcBody,
         query: sampleString(srcBody.query, 128),
         messages: srcBody.messages.map((msg: any) => ({
-          ...msg,
+          role:msg.role,
           content: sampleString(msg.content, 16),
         })),
       };
