@@ -495,7 +495,7 @@ async function handleStatic(req: Request) {
   // serve index.html for root
   if (url.pathname === "/" || url.pathname === "/index.html") {
     try {
-      const data = await Deno.readFile("index.html");
+      const data = await Deno.readTextFile("index.html");
       return new Response(data, { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
     } catch (e) {
       return new Response("index not found", { status: 404 });
