@@ -95,7 +95,7 @@ function buildModelsResponse() {
     id,
     object: "model",
     created: now,
-    owned_by: idx % 3 === 2 ? "openai" : "organization-owner",
+    owned_by:"openai",
   }));
   return {
     object: "list",
