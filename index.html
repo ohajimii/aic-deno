@@ -286,7 +286,7 @@
     </div>
 
     <div class="chat-main">
-        <button class="menu-toggle">â˜°</button>
+        <button class="menu-toggle">MENU</button>
         <div class="chat-container" id="chat-container"></div>
         <div class="form-container">
             <form id="message-form">
@@ -434,8 +434,8 @@
                 const actionsDiv = document.createElement('div');
                 actionsDiv.className = 'message-actions';
                 actionsDiv.innerHTML = `
-                    <button onclick="editMessage(${index})">âœï¸</button>
-                    <button onclick="deleteMessage(${index})">ðŸ—‘ï¸</button>
+                    <button onclick="editMessage(${index})">EDIT</button>
+                    <button onclick="deleteMessage(${index})">DEL</button>
                 `;
 
                 messageDiv.appendChild(contentDiv);
