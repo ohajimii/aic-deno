@@ -308,6 +308,7 @@ async function handleChatCompletions(req: Request, info: ServeHandlerInfo) {
   headers.set("Content-Type", "application/json");
   headers.set("Authorization", `Bearer ${jwt}`);
   headers.set("Accept", "*/*"); 
+  headers.set("Origin", "https://beta.aiipo.jp");
   headers.set("User-Agent", USER_AGENT);
   headers.set("Referer", REFERER);
   // Forward other optional headers if needed
