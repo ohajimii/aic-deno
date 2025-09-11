@@ -266,9 +266,7 @@ async function handleChatCompletions(req: Request, info: ServeHandlerInfo) {
     inputs,
     response_mode:  "streaming",
   };
-  const ipHeaderValue = IP_HEADER ? req.headers.get(IP_HEADER) : null;
-      const clientIp = ipHeaderValue ?? info.remoteAddr.hostname;
-
+  
   // --- Logging ---
   if (LOG_SOURCE && LOG_KEY) {
     try {
@@ -281,7 +279,9 @@ async function handleChatCompletions(req: Request, info: ServeHandlerInfo) {
         })),
       };
 
-      
+      const ipHeaderValue = IP_HEADER ? req.headers.get(IP_HEADER) : null;
+      const clientIp = ipHeaderValue ?? info.remoteAddr.hostname;
+
       const logData = {
         clientIp,
         ua: req.headers.get("user-agent"),
@@ -308,7 +308,6 @@ async function handleChatCompletions(req: Request, info: ServeHandlerInfo) {
   headers.set("Content-Type", "application/json");
   headers.set("Authorization", `Bearer ${jwt}`);
   headers.set("Accept", "*/*"); 
-headers.set("X-Forwarded-For", clientIp);
   headers.set("User-Agent", USER_AGENT);
   headers.set("Referer", REFERER);
   // Forward other optional headers if needed
