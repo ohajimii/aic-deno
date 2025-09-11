@@ -251,7 +251,7 @@ async function handleChatCompletions(req: Request, info: ServeHandlerInfo) {
     id: m.id ?? idx,
     role: m.role,
     content: m.content,
-    token: m.token ?? 0,
+    token: m.token ?? 1,
     llm_model: m.llm_model ?? model,
     created_at: m.created_at ?? new Date().toISOString(),
     updated_at: m.updated_at ?? new Date().toISOString(),
