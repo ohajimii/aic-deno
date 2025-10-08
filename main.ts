@@ -1,18 +1,12 @@
-// main.ts
-// Deno Deploy-ready server that exposes:
-// - GET /v1/models
-// - POST /v1/chat/completions (streaming & non-streaming)
-// - serves / (static index.html)
+// Deno Deploy-ready server with Deno.serve (fixes warm-up deprecation)
 // Config via environment variables (see below).
-
-import { serve, type ServeHandlerInfo } from "https://deno.land/std@0.201.0/http/server.ts";
 
 const JWT_URL = Deno.env.get("JWT_URL") ?? "https://beta.aiipo.jp/apmng/chat/get_jwt.php";
 const CHAT_URL = Deno.env.get("CHAT_URL") ?? "https://x162-43-21-174.static.xvps.ne.jp/chat";
 const PHPSESSID = Deno.env.get("PHPSESSID") ?? ""; // 必须设置为部署机密
 const LOG_SOURCE = Deno.env.get("LOG_SOURCE");
 const LOG_KEY = Deno.env.get("LOG_KEY");
-const IP_HEADER = Deno.env.get("IP_HEADER"); // Header for client IP, e.g., 'cf-connecting-ip'
+const IP_HEADER = Deno.env.get("IP_HEADER") || "x-forwarded-for"; // Default for client IP
 const CACHE_KEY = ["cache_jwt"];
 const JWT_CACHE_TTL_SECONDS = 9 * 60; // 9 minutes
 const USER_AGENT =
@@ -202,7 +196,7 @@ function sampleString(str: string, maxLength: number): string {
   return str.slice(0, maxLength);
 }
 
-async function handleChatCompletions(req: Request, info: ServeHandlerInfo) {
+async function handleChatCompletions(req: Request, info: any) { // info hack for logging
   // Only accept POST
   if (req.method !== "POST") return new Response("method not allowed", { status: 405 });
 
@@ -279,8 +273,7 @@ async function handleChatCompletions(req: Request, info: ServeHandlerInfo) {
         })),
       };
 
-      const ipHeaderValue = IP_HEADER ? req.headers.get(IP_HEADER) : null;
-      const clientIp = ipHeaderValue ?? info.remoteAddr.hostname;
+      const clientIp = IP_HEADER ? req.headers.get(IP_HEADER) : info?.remoteAddr?.hostname ?? 'unknown';
 
       const logData = {
         clientIp,
@@ -548,13 +541,21 @@ async function handleStatic(req: Request) {
   return new Response("not found", { status: 404 });
 }
 
-serve(async (req, info) => {
+// Use Deno.serve instead of deprecated std serve
+Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
+  // Hack info for logging (simulate ServeHandlerInfo)
+  const fakeInfo = {
+    remoteAddr: {
+      hostname: req.headers.get(IP_HEADER) ?? 'unknown'
+    }
+  } as any;
+
   if (url.pathname === "/v1/models" && req.method === "GET") {
     return await handleModels(req);
   }
   if (url.pathname === "/v1/chat/completions" && req.method === "POST") {
-    return await handleChatCompletions(req, info);
+    return await handleChatCompletions(req, fakeInfo);
   }
   // static
   if (url.pathname === "/" || url.pathname.startsWith("/index.html")) {
